@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import RoleSelectView from '@/components/RoleSelectView';
 import AuthView from '@/components/AuthView';
@@ -109,12 +109,39 @@ const mockTournaments: Tournament[] = [
 
 const Index = () => {
   const { toast } = useToast();
-  const [currentView, setCurrentView] = useState<'role-select' | 'auth' | 'dashboard'>('role-select');
-  const [selectedRole, setSelectedRole] = useState<UserRole>(null);
+  const [currentView, setCurrentView] = useState<'role-select' | 'auth' | 'dashboard'>(() => {
+    const saved = localStorage.getItem('majorCurrentView');
+    return (saved as 'role-select' | 'auth' | 'dashboard') || 'role-select';
+  });
+  const [selectedRole, setSelectedRole] = useState<UserRole>(() => {
+    const saved = localStorage.getItem('majorSelectedRole');
+    return (saved as UserRole) || null;
+  });
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [showPlayerDialog, setShowPlayerDialog] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState<string>('');
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    const saved = localStorage.getItem('majorIsLoggedIn');
+    return saved === 'true';
+  });
+  const [currentUser, setCurrentUser] = useState<string>(() => {
+    return localStorage.getItem('majorCurrentUser') || '';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('majorCurrentView', currentView);
+  }, [currentView]);
+
+  useEffect(() => {
+    localStorage.setItem('majorSelectedRole', selectedRole || '');
+  }, [selectedRole]);
+
+  useEffect(() => {
+    localStorage.setItem('majorIsLoggedIn', String(isLoggedIn));
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    localStorage.setItem('majorCurrentUser', currentUser);
+  }, [currentUser]);
 
   const handleRoleSelect = (role: UserRole) => {
     setSelectedRole(role);
@@ -143,6 +170,10 @@ const Index = () => {
     setCurrentView('role-select');
     setSelectedRole(null);
     setCurrentUser('');
+    localStorage.removeItem('majorCurrentView');
+    localStorage.removeItem('majorSelectedRole');
+    localStorage.removeItem('majorIsLoggedIn');
+    localStorage.removeItem('majorCurrentUser');
     toast({
       title: 'Выход выполнен',
       description: 'До встречи на турнире!',
